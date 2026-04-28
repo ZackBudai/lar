@@ -1,3 +1,11 @@
+Metadata-Version: 2.4
+Name: lar-assignment1
+Version: 0.1.0
+Summary: Baseline and improved first-order resolution prover
+Author: Student
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+
 # 3806ICT Assignment 1 - Coding Component
 
 This repository implements the coding component for Assignment 1:

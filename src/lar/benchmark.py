@@ -5,9 +5,10 @@ import json
 from pathlib import Path
 
 from .pipeline import run_case_pipeline
+from .tptp import parse_tptp_problem
 
 
-def run_benchmark(dataset_path: Path, timeout_sec: float) -> list[dict]:
+def _run_jsonl_benchmark(dataset_path: Path, timeout_sec: float) -> list[dict]:
     rows: list[dict] = []
     with dataset_path.open("r", encoding="utf-8") as f:
         for raw in f:
@@ -17,6 +18,29 @@ def run_benchmark(dataset_path: Path, timeout_sec: float) -> list[dict]:
             case = json.loads(line)
             rows.append(run_case_pipeline(case, timeout_sec))
     return rows
+
+
+def _load_tptp_cases(dataset_path: Path) -> list[dict]:
+    files: list[Path]
+    if dataset_path.is_dir():
+        files = sorted(dataset_path.glob("*.p"))
+    else:
+        files = [dataset_path]
+
+    cases: list[dict] = []
+    for file_path in files:
+        text = file_path.read_text(encoding="utf-8")
+        case = parse_tptp_problem(text, fallback_name=file_path.stem)
+        cases.append(case)
+    return cases
+
+
+def run_benchmark(dataset_path: Path, timeout_sec: float) -> list[dict]:
+    if dataset_path.suffix == ".jsonl":
+        return _run_jsonl_benchmark(dataset_path, timeout_sec)
+
+    cases = _load_tptp_cases(dataset_path)
+    return [run_case_pipeline(case, timeout_sec) for case in cases]
 
 
 def print_table(rows: list[dict]) -> None:
@@ -52,7 +76,11 @@ def print_table(rows: list[dict]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run baseline vs improved FOL benchmark")
-    parser.add_argument("dataset", type=Path, help="Path to JSONL dataset")
+    parser.add_argument(
+        "dataset",
+        type=Path,
+        help="Path to a TPTP .p file, a directory of .p files, or a legacy JSONL dataset",
+    )
     parser.add_argument("--timeout", type=float, default=6.0)
     parser.add_argument("--save", type=Path, default=None, help="Optional output JSON file")
     args = parser.parse_args()

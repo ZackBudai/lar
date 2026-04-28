@@ -2,15 +2,23 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from .logic import Formula
 from .parser import parse_formula
 from .solver import baseline_entails, improved_entails
 
 
-def parse_stage(axiom_lines: list[str], query_line: str):
+def parse_stage(axiom_lines: list[str | Formula], query_line: str | Formula):
     axioms = []
     for line in axiom_lines:
-        axioms.append(parse_formula(line))
-    query = parse_formula(query_line)
+        if isinstance(line, Formula):
+            axioms.append(line)
+        else:
+            axioms.append(parse_formula(line))
+
+    if isinstance(query_line, Formula):
+        query = query_line
+    else:
+        query = parse_formula(query_line)
     return axioms, query
 
 

@@ -1,4 +1,4 @@
-# one formula per line
-forall x. (Human(x) -> Mortal(x))
-Human(Socrates)
-# query is usually provided separately in benchmark mode
+% Minimal TPTP example
+fof(example_axiom_1, axiom, ! [X] : (human(X) => mortal(X))).
+fof(example_axiom_2, axiom, human(socrates)).
+fof(example_goal, conjecture, mortal(socrates)).

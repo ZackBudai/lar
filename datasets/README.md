@@ -2,16 +2,15 @@
 
 This folder contains benchmark instances for first-order entailment tests.
 
-- File: benchmark.jsonl
-- Format: one JSON object per line
-- Fields:
-  - name: unique case identifier
-  - axioms: list of first-order logic formula strings
-  - query: formula to test as logical consequence
-  - expected: true if axioms entail query, else false
+- Primary sample set: `tptp/`
+- Format: one TPTP problem per `.p` file
+- Statement form: `fof(name, role, formula).`
+- Required role: exactly one `conjecture` per problem
+- Axioms: any `axiom`/`hypothesis`/`lemma`/`theorem`/`plain` entries
+- Expected result source: `% Status : ...` comment in each file
 
 Notes:
 
-- Variables should use lowercase names (for example x, y, z).
-- Constants, function symbols, and predicate symbols should start with uppercase/lowercase as desired, but constants are recommended to be capitalized (for example A, Socrates) to avoid ambiguity.
-- Cases here are course-style synthetic benchmarks generated for assignment experimentation.
+- Variables use TPTP uppercase style (for example `X`, `Y`, `Z`).
+- Constants, function symbols, and predicate symbols use lowercase style (for example `a`, `f`, `human`).
+- Cases here are course-style synthetic benchmarks written in TPTP syntax.

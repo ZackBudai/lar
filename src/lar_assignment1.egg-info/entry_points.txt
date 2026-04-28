@@ -1,0 +1,2 @@
+[console_scripts]
+lar-benchmark = lar.benchmark:main
