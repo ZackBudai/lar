@@ -1,3 +1,4 @@
+% Source: standard introductory logic textbook example of Modus Ponens.
 % Status : Theorem
 fof(mp_rule, axiom, ! [X] : (human(X) => mortal(X))).
 fof(mp_fact, axiom, human(socrates)).

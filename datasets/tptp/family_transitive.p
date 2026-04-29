@@ -1,5 +1,7 @@
+% Source: standard family-relation transitivity example from first-order logic textbooks.
 % Status : Theorem
-fof(ft_rule, axiom, ! [X, Y, Z] : ((parent(X,Y) & parent(Y,Z)) => grandparent(X,Z))).
-fof(ft_f1, axiom, parent(alice,bob)).
-fof(ft_f2, axiom, parent(bob,charlie)).
-fof(ft_goal, conjecture, grandparent(alice,charlie)).
+fof(ax1, axiom, ! [X,Y] : (parent(X,Y) => ancestor(X,Y))).
+fof(ax2, axiom, ! [X,Y,Z] : ((parent(X,Y) & ancestor(Y,Z)) => ancestor(X,Z))).
+fof(ax3, axiom, parent(john,mary)).
+fof(ax4, axiom, parent(mary,alice)).
+fof(goal, conjecture, ancestor(john,alice)).

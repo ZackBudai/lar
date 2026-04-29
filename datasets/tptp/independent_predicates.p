@@ -1,4 +1,5 @@
+% Source: standard independence/counterexample example from logic textbooks.
 % Status : CounterSatisfiable
-fof(ip_r1, axiom, ! [X] : (a1(X) => a2(X))).
-fof(ip_f1, axiom, a1(k)).
-fof(ip_goal, conjecture, b1(k)).
+fof(ax1, axiom, p(a)).
+fof(ax2, axiom, q(b)).
+fof(goal, conjecture, r(a)).

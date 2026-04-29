@@ -1,4 +1,0 @@
-% Minimal TPTP example
-fof(example_axiom_1, axiom, ! [X] : (human(X) => mortal(X))).
-fof(example_axiom_2, axiom, human(socrates)).
-fof(example_goal, conjecture, mortal(socrates)).

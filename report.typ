@@ -21,7 +21,7 @@
 #v(12pt)
 
 
-#text(size: 11pt, weight: "bold")[Abstract.] This report describes the design, implementation, and comprehensive evaluation of a complete first-order logic theorem prover built around resolution refutation. The prover addresses the fundamental problem of automated theorem proving: determining whether a query formula is logically entailed by a given knowledge base. The system implements proof by contradiction, where a query is deemed entailed if and only if the knowledge base combined with the negated query is unsatisfiable. Unsatisfiability is demonstrated by deriving the empty clause through systematic resolution. The theorem prover consists of five integrated components. First, a hand-written character-by-character tokenizer and recursive-descent parser carefully constructs an abstract syntax tree from logical formulas while respecting proper operator precedence. Second, a comprehensive normalization pipeline converts arbitrary formulas into Conjunctive Normal Form through seven rigorous transformations: implication elimination, negation normal form construction via De Morgan's laws, variable standardization to prevent capture, Skolemization of existential quantifiers, universal quantifier removal, conjunction-disjunction distribution, and clause extraction with tautology elimination. Third, a unification engine with occurs-check ensures mathematically sound substitutions. Fourth and fifth, two distinct resolution strategies: a baseline naive prover that exhaustively searches all possible clause pair combinations, and an improved prover that incorporates sophisticated search control strategies including set-of-support methodology, unit preference heuristic, predicate-based indexing, tautology filtering, and subsumption checking. Comprehensive evaluation on ten carefully selected benchmark cases demonstrates that both provers achieve perfect correctness, returning expected truth values on every instance. The improved prover significantly outperforms baseline: achieving 524x speedup on the deepest chain case through reduced clause generation from 2,272 to 40, and overall speedup averaging 1.4x across all cases. Aggregate metrics show total clause generation reduced from 39,359 in baseline to 20,233 in improved. These empirical results conclusively validate that focused inference control strategies substantially reduce search branching in first-order resolution while rigorously maintaining logical soundness and correctness.
+#text(size: 11pt, weight: "bold")[Abstract.] This report describes the design, implementation, and evaluation of a first-order logic theorem prover built around resolution refutation. The prover addresses entailment by proof by contradiction: a query is entailed when the axioms combined with the negated query are unsatisfiable. The system contains a hand-written tokenizer and recursive-descent parser, a full CNF conversion pipeline, unification with occurs-check, and two solvers (baseline and improved). The baseline performs broad pairwise search, while the improved solver applies set-of-support, unit preference, predicate indexing, tautology filtering, and subsumption checks. Evaluation in this report uses newly collected official TPTP problems and then runs benchmarks on the parser-compatible subset. On this subset, the baseline returns the expected outcome in all three cases (3/3), while the improved solver returns zero correct outcomes (0/3) because all three runs time out before deriving entailment. Runtime and clause-generation metrics show the improved solver explores far fewer clauses (55 vs 883,722) and returns quickly, but with incorrect entailment outcomes for these cases. These results indicate that the current optimized strategy needs refinement for this class of official puzzle problems, and that correctness validation must remain the primary criterion when tuning search control.
 
 #v(6pt)
 
@@ -90,31 +90,28 @@ These heuristics reduce the number of intermediate clauses and help the search r
 
 A practical way to understand the improved prover is to look at the order of work it performs. It begins by seeding the search with the negated conjecture and the clauses that can directly interact with it. It then prefers short clauses, which often correspond to facts or near-facts, so contradictions can surface early. Once a useful clause has been produced, predicate indexing narrows the next resolution choices to clauses that share the same predicate symbol. That simple filtering step eliminates many dead-end pairings before any expensive unification is attempted. Finally, tautology checks and subsumption avoid storing clauses that are obviously redundant, which keeps the active clause set smaller across the whole run.
 
-The improved solver outperforms the baseline for three main reasons. First, set-of-support keeps the search local to clauses connected with the negated query, which avoids wasting work on irrelevant parts of the knowledge base. Second, unit preference tends to expose contradictions earlier in Horn-like problems, especially those dominated by short clauses. Third, predicate indexing and subsumption reduce the number of candidate pairs that ever need to be tested. Together, these changes explain why the improved prover generates far fewer clauses overall and reaches refutations much faster on the recursive and chain-style benchmarks. The overall hypothesis is that the solver wins not because it changes the logic, but because it reduces branching at exactly the places where naive resolution spends most of its time.
+The improved solver is still expected to reduce branching for many problems due to set-of-support, unit preference, and indexing. However, as the updated benchmark results show, reducing branching alone is not sufficient: the search control must still preserve enough coverage to find refutations on harder official puzzle instances. The current implementation therefore demonstrates a speed-versus-completeness tradeoff on this dataset.
 
 = Datasets and Justification
-The evaluation uses the course-provided TPTP benchmark suite in `datasets/tptp/`, which contains ten small first-order problems with a single conjecture in each file.
+The evaluation uses newly collected official TPTP problems in `datasets/tptp/` and an automatically filtered parser-compatible subset in `datasets/tptp_compatible/`.
 
-- The cases cover different reasoning patterns: modus ponens, transitive family reasoning, recursion, existential reasoning, function symbols, independent predicates, and a hard non-entailed chain.
-- TPTP is a good choice because it is a standard theorem-proving format, it cleanly separates axioms from the conjecture, and it is easy to reproduce on other systems.
-- The benchmark runner also supports a legacy JSONL input format, which makes it straightforward to add additional datasets later, even though the final evaluation in this report uses the TPTP set.
+- Problems were downloaded from official TPTP endpoints and kept in FOF form without `include(...)` directives.
+- Many official files use constructs not currently supported by this parser (notably equality and some additional syntax), so a compatibility filter was applied before benchmarking.
+- The resulting benchmark set contains three compatible PUZ problems, each with one conjecture and expected status derived from TPTP metadata.
 
 This dataset selection is appropriate for the assignment because it exercises both correctness and search control without relying on brittle hand-crafted examples.
 
 = Implementation and Experiment
-The benchmark suite consists of ten synthetic course-style TPTP problems that cover the main capabilities of the prover.
+The benchmark suite used for execution consists of three parser-compatible official TPTP PUZ problems.
 
-- Forward chaining and modus ponens.
-- Simple non-entailed queries.
-- Transitive and recursive reasoning.
-- Existential reasoning.
-- Function symbols in terms.
-- A difficult non-entailed chain case that stresses the search procedure.
+- `PUZ_PUZ005+1`
+- `PUZ_PUZ031+1`
+- `PUZ_PUZ031+2`
 
 The benchmark command is:
 
 ```
-python -m lar.benchmark datasets/tptp --timeout 6 --save results.json
+python -m lar.benchmark datasets/tptp_compatible --timeout 6 --save results.json
 ```
 
 The saved `results.json` file stores the per-case outcomes and timing data used in the results section below.
@@ -122,35 +119,27 @@ The saved `results.json` file stores the per-case outcomes and timing data used 
 The experiment was run with a fixed six-second timeout to keep the baseline and improved methods comparable. The main measurements are correctness, elapsed time, median time, speedup, and total clause generation. These metrics are enough to show whether the improved prover preserves correctness and whether it reduces search effort in practice.
 
 = Results
-The implementation matches the expected result on every benchmark case.
+The new official-dataset benchmark shows a clear correctness split between the two solver variants.
 
 #table(
 	columns: (2.1fr, 0.8fr, 0.8fr, 0.8fr, 0.9fr, 0.9fr),
 	table.header([Case], [Expected], [Baseline], [Improved], [Base t (s)], [Imp t (s)]),
-	[modus_ponens], [true], [true], [true], [0.000380], [0.000281],
-	[not_entailed_simple], [false], [false], [false], [0.001509], [0.000158],
-	[family_transitive], [true], [true], [true], [0.001782], [0.000407],
-	[ancestor_recursive], [true], [true], [true], [0.016285], [0.001115],
-	[likes_exists], [true], [true], [true], [0.000112], [0.000125],
-	[query_with_function], [true], [true], [true], [0.000212], [0.000244],
-	[bird_penguin], [true], [true], [true], [0.000608], [0.000210],
-	[independent_predicates], [false], [false], [false], [0.000257], [0.000117],
-	[chain_depth_4], [true], [true], [true], [2.263806], [0.001697],
-	[non_entailed_chain], [false], [false], [false], [6.000051], [6.004293],
+	[PUZ_PUZ005+1], [true], [true], [false], [6.000500], [0.003619],
+	[PUZ_PUZ031+1], [true], [true], [false], [6.000160], [0.003717],
+	[PUZ_PUZ031+2], [true], [true], [false], [6.000190], [0.003819],
 )
 
 Aggregate metrics:
 
-- Cases: 10
-- Baseline correctness: 10/10
-- Improved correctness: 10/10
-- Baseline average time: 0.828500 s
-- Improved average time: 0.600865 s
-- Baseline median time: 0.001059 s
-- Improved median time: 0.000263 s
-- Average speedup across all cases: 1.379x
-- Average speedup excluding the dual-timeout case: 524.695x
-- Total clauses generated: baseline 39,359 vs improved 20,233
+- Cases: 3
+- Baseline correctness: 3/3
+- Improved correctness: 0/3
+- Baseline average time: 6.000283 s
+- Improved average time: 0.003719 s
+- Baseline median time: 6.000190 s
+- Improved median time: 0.003717 s
+- Average speedup across all cases: 1614.377x
+- Total clauses generated: baseline 883,722 vs improved 55
 
 #figure(
 	image("figures/runtime_comparison.png", width: 100%),
@@ -163,25 +152,23 @@ Aggregate metrics:
 )
 
 = Discussion
-The benchmark results show that both provers are functionally correct on the provided suite. The improved prover is consistently faster on most cases because its search control avoids a large amount of unnecessary resolution work. The deepest chain case shows the largest practical improvement, because the baseline solver explores many more intermediate clauses before finding the contradiction.
+The benchmark results on the new official subset show that the two provers currently optimize for different outcomes. The baseline solver reaches the expected entailment result in all three cases, while the improved solver times out quickly and returns `false` in all three theorem cases.
 
-The improvement is not just visible in runtime: the number of generated clauses drops from 39,359 in the baseline to 20,233 in the improved solver. That reduction supports the main hypothesis behind the optimized algorithm, namely that focused clause selection and redundancy filtering cut down the branching factor enough to matter on real benchmark inputs.
+The runtime and search-size differences are large: the improved solver generates only 55 clauses total compared with 883,722 for baseline, and it returns in milliseconds rather than near-timeout execution. However, this reduction is not useful by itself because it comes with a correctness loss on this dataset.
 
-The difficult non-entailed chain case remains challenging for both solvers under a six-second timeout. This suggests that negative instances still need stronger simplification rules, more aggressive redundancy elimination, or additional indexing to keep the search bounded.
-
-A useful case study is chain_depth_4. The baseline solver spends most of its time generating and reconsidering clauses that do not contribute directly to the proof, while the improved prover keeps the search focused enough to reach the contradiction almost immediately. That contrast supports the main design claim of the project: better inference control matters more than raw clause generation speed once the problem contains recursive structure.
+This behavior suggests that the improved strategy is over-pruning or not exploring enough of the search space for these PUZ problems. A key next step is to adjust support-set expansion and partner selection so that optimization does not discard proof-critical inferences.
 
 = Limitations and Future Work
-The current implementation is correct on the benchmark set, but it still has several limitations.
+The current implementation has several limitations exposed by the new benchmark run.
 
-- Performance deteriorates on hard non-entailed problems.
-- Subsumption is basic and could be strengthened.
-- The benchmark suite is small and synthetic.
+- Parser coverage is incomplete for full official TPTP FOF syntax (for example, equality-heavy files and some connective variants).
+- The improved solver currently sacrifices correctness on the tested compatible PUZ cases.
+- Subsumption and clause-selection policies need tighter completeness safeguards.
 
 Useful extensions would include more advanced clause selection heuristics, stronger forward and backward subsumption, improved indexing, and evaluation on larger and noisier knowledge bases.
 
 = Conclusion
-This project delivers an end-to-end first-order logic reasoning system: parser, CNF conversion, unification, baseline resolution, improved resolution, and benchmark tooling. The improved solver preserves correctness while delivering large practical speedups on the benchmark suite. The remaining timeout case highlights where future work should focus.
+This project delivers an end-to-end first-order logic reasoning system with parser, CNF conversion, unification, baseline resolution, improved resolution, and benchmark tooling. On the newly collected official dataset, the benchmarked compatible subset shows that the baseline remains reliable while the improved variant requires refinement to recover correctness on harder puzzle-style problems. Future work should prioritize parser coverage and completeness-preserving optimization.
 
 = References
 1. Robinson, J. A.: A Machine-Oriented Logic Based on the Resolution Principle. Journal of the ACM 12(1), 23–41 (1965)
