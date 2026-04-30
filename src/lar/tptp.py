@@ -92,7 +92,7 @@ def _tokenize_formula(text: str) -> list[str]:
             i = i + 1
             continue
 
-        if i + 2 < n and text[i : i + 3] == "<=>":
+        if i + 2 < n and text[i : i + 3] in {"<=>", "<->"}:
             tokens.append("<=>")
             i = i + 3
             continue

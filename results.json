@@ -1,66 +1,242 @@
 [
   {
-    "name": "PUZ_PUZ005+1",
+    "name": "access_control",
     "expected": true,
     "baseline": {
       "entailed": true,
       "derived_empty_clause": false,
       "timeout": false,
-      "clauses_generated": 202856,
-      "clauses_kept": 75122,
-      "elapsed_sec": 6.000499903999298
+      "clauses_generated": 233810,
+      "clauses_kept": 53991,
+      "elapsed_sec": 6.0000444459983555
+    },
+    "improved": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 128938,
+      "clauses_kept": 54233,
+      "elapsed_sec": 2.7313793409994105
+    },
+    "baseline_correct": true,
+    "improved_correct": true
+  },
+  {
+    "name": "architecture_layers",
+    "expected": true,
+    "baseline": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 267830,
+      "clauses_kept": 53019,
+      "elapsed_sec": 6.000084527000581
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 5,
-      "clauses_kept": 51,
-      "elapsed_sec": 0.0036191320004945737
+      "clauses_generated": 351786,
+      "clauses_kept": 150155,
+      "elapsed_sec": 6.000020845000108
     },
     "baseline_correct": true,
     "improved_correct": false
   },
   {
-    "name": "PUZ_PUZ031+1",
+    "name": "data_lineage",
     "expected": true,
     "baseline": {
       "entailed": true,
       "derived_empty_clause": false,
       "timeout": false,
-      "clauses_generated": 360725,
-      "clauses_kept": 121612,
-      "elapsed_sec": 6.000159711999913
+      "clauses_generated": 244183,
+      "clauses_kept": 57535,
+      "elapsed_sec": 6.000036801000533
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 25,
-      "clauses_kept": 51,
-      "elapsed_sec": 0.0037173049995544716
+      "clauses_generated": 305620,
+      "clauses_kept": 136007,
+      "elapsed_sec": 6.000008822999007
     },
     "baseline_correct": true,
     "improved_correct": false
   },
   {
-    "name": "PUZ_PUZ031+2",
+    "name": "dependency_resolution",
     "expected": true,
     "baseline": {
       "entailed": true,
       "derived_empty_clause": false,
       "timeout": false,
-      "clauses_generated": 320141,
-      "clauses_kept": 134497,
-      "elapsed_sec": 6.000190368999938
+      "clauses_generated": 222325,
+      "clauses_kept": 57174,
+      "elapsed_sec": 6.085175870000967
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 25,
-      "clauses_kept": 51,
-      "elapsed_sec": 0.003819294999630074
+      "clauses_generated": 293155,
+      "clauses_kept": 126536,
+      "elapsed_sec": 6.0000149339994095
+    },
+    "baseline_correct": true,
+    "improved_correct": false
+  },
+  {
+    "name": "financial_audit",
+    "expected": true,
+    "baseline": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 221992,
+      "clauses_kept": 27247,
+      "elapsed_sec": 6.000173172000359
+    },
+    "improved": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 11426,
+      "clauses_kept": 3843,
+      "elapsed_sec": 0.2002963249997265
+    },
+    "baseline_correct": true,
+    "improved_correct": true
+  },
+  {
+    "name": "medical_diagnosis",
+    "expected": true,
+    "baseline": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 246043,
+      "clauses_kept": 60355,
+      "elapsed_sec": 6.000983383000857
+    },
+    "improved": {
+      "entailed": false,
+      "derived_empty_clause": false,
+      "timeout": true,
+      "clauses_generated": 328030,
+      "clauses_kept": 136983,
+      "elapsed_sec": 6.000012218999473
+    },
+    "baseline_correct": true,
+    "improved_correct": false
+  },
+  {
+    "name": "ml_pipeline",
+    "expected": true,
+    "baseline": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 228270,
+      "clauses_kept": 63403,
+      "elapsed_sec": 6.00002147899977
+    },
+    "improved": {
+      "entailed": false,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 220089,
+      "clauses_kept": 94480,
+      "elapsed_sec": 4.4416346620000695
+    },
+    "baseline_correct": true,
+    "improved_correct": false
+  },
+  {
+    "name": "network_routing",
+    "expected": true,
+    "baseline": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 145887,
+      "clauses_kept": 43391,
+      "elapsed_sec": 3.7435764860001655
+    },
+    "improved": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 56925,
+      "clauses_kept": 25227,
+      "elapsed_sec": 0.9749342420000175
+    },
+    "baseline_correct": true,
+    "improved_correct": true
+  },
+  {
+    "name": "ontology_hierarchy",
+    "expected": true,
+    "baseline": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 259669,
+      "clauses_kept": 45853,
+      "elapsed_sec": 6.000034824000977
+    },
+    "improved": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 222489,
+      "clauses_kept": 92378,
+      "elapsed_sec": 4.39312847400106
+    },
+    "baseline_correct": true,
+    "improved_correct": true
+  },
+  {
+    "name": "social_influence",
+    "expected": true,
+    "baseline": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 226227,
+      "clauses_kept": 44393,
+      "elapsed_sec": 6.000069120998887
+    },
+    "improved": {
+      "entailed": false,
+      "derived_empty_clause": false,
+      "timeout": true,
+      "clauses_generated": 331746,
+      "clauses_kept": 141892,
+      "elapsed_sec": 6.000023864000468
+    },
+    "baseline_correct": true,
+    "improved_correct": false
+  },
+  {
+    "name": "supply_chain_network",
+    "expected": true,
+    "baseline": {
+      "entailed": true,
+      "derived_empty_clause": false,
+      "timeout": false,
+      "clauses_generated": 250784,
+      "clauses_kept": 52394,
+      "elapsed_sec": 6.000038551001126
+    },
+    "improved": {
+      "entailed": false,
+      "derived_empty_clause": false,
+      "timeout": true,
+      "clauses_generated": 330142,
+      "clauses_kept": 142638,
+      "elapsed_sec": 6.000876895001056
     },
     "baseline_correct": true,
     "improved_correct": false
