@@ -6,17 +6,17 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 84056,
-      "clauses_kept": 19538,
-      "elapsed_sec": 6.004584721000015
+      "clauses_generated": 99458,
+      "clauses_kept": 23189,
+      "elapsed_sec": 6.000053818000197
     },
     "improved": {
       "entailed": true,
       "derived_empty_clause": false,
       "timeout": false,
-      "clauses_generated": 154473,
-      "clauses_kept": 65269,
-      "elapsed_sec": 2.7475155739999764
+      "clauses_generated": 87859,
+      "clauses_kept": 37524,
+      "elapsed_sec": 1.4320736270001362
     },
     "baseline_correct": false,
     "improved_correct": true
@@ -28,17 +28,17 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 77991,
-      "clauses_kept": 17431,
-      "elapsed_sec": 6.000022372999979
+      "clauses_generated": 97521,
+      "clauses_kept": 20396,
+      "elapsed_sec": 6.000016331000097
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 316360,
-      "clauses_kept": 133288,
-      "elapsed_sec": 6.268693403000043
+      "clauses_generated": 354402,
+      "clauses_kept": 150383,
+      "elapsed_sec": 6.000016417000097
     },
     "baseline_correct": false,
     "improved_correct": false
@@ -50,17 +50,17 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 73585,
-      "clauses_kept": 21143,
-      "elapsed_sec": 6.000246124
+      "clauses_generated": 89423,
+      "clauses_kept": 25922,
+      "elapsed_sec": 6.229123910999988
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 257416,
-      "clauses_kept": 114342,
-      "elapsed_sec": 6.000037706000057
+      "clauses_generated": 314904,
+      "clauses_kept": 139763,
+      "elapsed_sec": 6.203269968999848
     },
     "baseline_correct": false,
     "improved_correct": false
@@ -72,17 +72,17 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 78974,
-      "clauses_kept": 21264,
-      "elapsed_sec": 6.00001290900002
+      "clauses_generated": 90917,
+      "clauses_kept": 24495,
+      "elapsed_sec": 6.000136411999847
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 327343,
-      "clauses_kept": 142339,
-      "elapsed_sec": 6.2947862059999125
+      "clauses_generated": 310986,
+      "clauses_kept": 135060,
+      "elapsed_sec": 6.000019818000055
     },
     "baseline_correct": false,
     "improved_correct": false
@@ -94,20 +94,20 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 82712,
-      "clauses_kept": 22494,
-      "elapsed_sec": 6.000161172000048
+      "clauses_generated": 71180,
+      "clauses_kept": 19170,
+      "elapsed_sec": 6.0000684950000505
     },
     "improved": {
-      "entailed": false,
+      "entailed": true,
       "derived_empty_clause": false,
-      "timeout": true,
-      "clauses_generated": 324871,
-      "clauses_kept": 134773,
-      "elapsed_sec": 6.000042835000045
+      "timeout": false,
+      "clauses_generated": 22615,
+      "clauses_kept": 7888,
+      "elapsed_sec": 0.36485638700014533
     },
     "baseline_correct": false,
-    "improved_correct": false
+    "improved_correct": true
   },
   {
     "name": "medical_diagnosis",
@@ -118,18 +118,18 @@
       "timeout": false,
       "clauses_generated": 7849,
       "clauses_kept": 3452,
-      "elapsed_sec": 0.6501410580000311
+      "elapsed_sec": 0.7088173269999061
     },
     "improved": {
-      "entailed": false,
+      "entailed": true,
       "derived_empty_clause": false,
-      "timeout": true,
-      "clauses_generated": 319866,
-      "clauses_kept": 132567,
-      "elapsed_sec": 6.00001152699997
+      "timeout": false,
+      "clauses_generated": 10555,
+      "clauses_kept": 4652,
+      "elapsed_sec": 0.16680442500000936
     },
     "baseline_correct": true,
-    "improved_correct": false
+    "improved_correct": true
   },
   {
     "name": "ml_pipeline",
@@ -138,17 +138,17 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 71860,
-      "clauses_kept": 19660,
-      "elapsed_sec": 6.000030656000035
+      "clauses_generated": 78440,
+      "clauses_kept": 21538,
+      "elapsed_sec": 6.000072888999966
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": false,
-      "clauses_generated": 220074,
-      "clauses_kept": 94476,
-      "elapsed_sec": 3.974652378000087
+      "clauses_generated": 220097,
+      "clauses_kept": 94482,
+      "elapsed_sec": 3.8958381460001874
     },
     "baseline_correct": false,
     "improved_correct": false
@@ -160,17 +160,17 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 94366,
-      "clauses_kept": 29030,
-      "elapsed_sec": 6.000080235000041
+      "clauses_generated": 93799,
+      "clauses_kept": 28855,
+      "elapsed_sec": 6.000013786999716
     },
     "improved": {
       "entailed": true,
       "derived_empty_clause": false,
       "timeout": false,
-      "clauses_generated": 56158,
-      "clauses_kept": 25029,
-      "elapsed_sec": 0.9586107879999872
+      "clauses_generated": 56786,
+      "clauses_kept": 25237,
+      "elapsed_sec": 1.156162275999577
     },
     "baseline_correct": false,
     "improved_correct": true
@@ -184,15 +184,15 @@
       "timeout": false,
       "clauses_generated": 11057,
       "clauses_kept": 2616,
-      "elapsed_sec": 0.6807876820000729
+      "elapsed_sec": 0.6271557969998867
     },
     "improved": {
       "entailed": true,
       "derived_empty_clause": false,
       "timeout": false,
-      "clauses_generated": 126,
-      "clauses_kept": 76,
-      "elapsed_sec": 0.001656690000004346
+      "clauses_generated": 44697,
+      "clauses_kept": 18937,
+      "elapsed_sec": 0.6273163400001067
     },
     "baseline_correct": true,
     "improved_correct": true
@@ -204,17 +204,17 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 86742,
-      "clauses_kept": 21430,
-      "elapsed_sec": 6.002219280999952
+      "clauses_generated": 111024,
+      "clauses_kept": 26265,
+      "elapsed_sec": 6.000014343000203
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 60355,
-      "clauses_kept": 26506,
-      "elapsed_sec": 6.0057483709999815
+      "clauses_generated": 345643,
+      "clauses_kept": 148504,
+      "elapsed_sec": 6.000019260000045
     },
     "baseline_correct": false,
     "improved_correct": false
@@ -226,17 +226,17 @@
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 19323,
-      "clauses_kept": 4490,
-      "elapsed_sec": 6.000035918000094
+      "clauses_generated": 90851,
+      "clauses_kept": 17882,
+      "elapsed_sec": 6.000123904999782
     },
     "improved": {
       "entailed": false,
       "derived_empty_clause": false,
       "timeout": true,
-      "clauses_generated": 308359,
-      "clauses_kept": 135355,
-      "elapsed_sec": 6.158202370000026
+      "clauses_generated": 343907,
+      "clauses_kept": 149950,
+      "elapsed_sec": 6.00003416699974
     },
     "baseline_correct": false,
     "improved_correct": false

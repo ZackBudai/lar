@@ -52,7 +52,7 @@
   #v(12pt)
   #text(size: 12pt)[Zack Budai]
   #v(3pt)
-  #text(size: 9pt)[Griffith University, Nathan QLD 4111, Australia]
+  #text(size: 9pt)[Griffith University, Gold Coast QLD 4214, Australia]
   #v(1pt)
   #text(size: 9pt)[#link("mailto:zack.budai2@griffithuni.edu.au")[zack.budai2\@griffithuni.edu.au]]
   #v(10pt)
@@ -60,7 +60,7 @@
 
 // ─── Abstract ────────────────────────────────────────────────────────────────
 
-#text(weight: "bold")[Abstract. ]This report describes the design and evaluation of a first-order logic (FOL) theorem prover implementing backward LK sequent calculus proof search. Automated theorem proving (ATP) finds application in formal verification, knowledge-base reasoning, and constraint solving; however, naive proof search is computationally intractable for FOL, requiring carefully engineered inference strategies. The system is implemented in Python 3.12 with a TPTP FOF parser, CNF normalisation pipeline, occurs-check unification, and two proof-search solvers. The _baseline_ (Algorithm 2) correctly implements the rule-priority structure of Algorithm 2~#cite(<hou2021>): invertible single-conclusion rules (∧L, ∨R, →R, ¬L, ¬R, ∀R, ∃L) are applied first, with branching rules (∧R, ∨L, →L) deferred until no invertible rule remains; each invertible rule is decomposed one formula at a time, creating k intermediate memoised states. The _improved_ solver replaces this with a saturation phase that drives all invertible rules to fixpoint in a single pass, collapsing k recursion levels into one canonical memo entry before any branching occurs. Both solvers are evaluated on two datasets totalling 61 problems: 11 hand-crafted AI-domain problems and 50 TPTP FOF problems covering the SYN, LCL, and PUZ domains. The improved solver solves 34/61 (56%) vs 13/61 (21%) for the baseline, using 1.5× fewer proof-search steps on jointly-solved problems. On TPTP the gap is 31/50 (62%) vs 11/50 (22%). On the AI-generated set the improved solver gains two problems but regresses on one (medical_diagnosis), for a net gain of one. Remaining failures divide between search-space explosions on hard condensed-detachment theorems and incompleteness in the Herbrand witness strategy for ∃∀ alternation.
+#text(weight: "bold")[Abstract. ]This report describes the design and evaluation of a first-order logic (FOL) theorem prover implementing backward LK sequent calculus proof search. Automated theorem proving (ATP) finds application in formal verification, knowledge-base reasoning, and constraint solving; naive FOL proof search is computationally intractable, requiring carefully engineered inference strategies. The system is implemented in Python 3.12 with a TPTP FOF parser, CNF normalisation pipeline, occurs-check unification, and two proof-search solvers. The CNF pipeline covers implication elimination, negation normal form conversion, Skolemisation with fresh function symbols, variable standardisation, and clause-level tautology removal. The _baseline_ (Algorithm 2) correctly implements the rule-priority structure of Algorithm 2~#cite(<hou2021>): invertible single-conclusion rules (∧L, ∨R, →R, ¬L, ¬R, ∀R, ∃L) are applied first, with branching rules (∧R, ∨L, →L) deferred until no invertible rule remains; each invertible rule is decomposed one formula at a time, creating k intermediate memoised states. The _improved_ solver replaces this with a saturation phase that drives all invertible rules to fixpoint in a single pass, collapsing k recursion levels into one canonical memo entry before any branching occurs. Both solvers are evaluated on two datasets totalling 61 problems under a 6-second per-problem timeout: 11 hand-crafted AI-domain problems and 50 TPTP FOF problems covering the SYN, LCL, and PUZ domains. The improved solver solves 35/61 (57%) vs 13/61 (21%) for the baseline, using 1.5× fewer proof-search steps on jointly-solved problems. On TPTP the gap is 30/50 (60%) vs 11/50 (22%). On the AI-generated set the improved solver gains three problems with no regressions, for a net gain of three. Remaining failures divide between search-space explosions on hard condensed-detachment theorems and incompleteness in the Herbrand witness strategy for ∃∀ alternation.
 
 #v(0.3em)
 #text(weight: "bold")[Keywords: ]first-order logic #sym.dot.op LK sequent calculus #sym.dot.op backward proof search #sym.dot.op saturation #sym.dot.op TPTP
@@ -79,6 +79,12 @@ This work implements Algorithm 2 from~#cite(<hou2021>), a backward LK proof-sear
 == Architecture
 
 The system follows a four-stage pipeline. A TPTP FOF file is parsed into an internal formula AST; the CNF stage applies implication elimination, NNF conversion, Skolemisation, and variable standardisation. The solver runs backward LK proof search, recording entailment outcome and search metrics; the benchmark driver collects results and writes them to JSON.
+
+#figure(
+  image("figures/architecture.png", width: 100%),
+  supplement: [Fig.],
+  caption: [Four-stage pipeline: TPTP parser → CNF normalisation → proof-search solver → benchmark driver.],
+) <fig-architecture>
 
 == Baseline Algorithm (Algorithm 2)
 
@@ -137,13 +143,13 @@ All TPTP problems were filtered to those that are fully self-contained, contain 
   columns: (2.2fr, 0.8fr, 0.8fr, 0.8fr, 0.8fr, 0.8fr, 0.8fr),
   align: (left, center, center, center, center, center, center),
   [*Dataset*],[*N*],[*Base*],[*Imp*],[*B-TO*],[*I-TO*],[*B-cls (K)*],
-  [AI-generated],[11],[2],[3],[9],[7],[689],
-  [TPTP FOF],[50],[11],[31],[9],[9],[266],
-  [*Combined*],[*61*],[*13*],[*34*],[*18*],[*16*],[*955*],
+  [AI-generated],[11],[2],[5],[9],[5],[689],
+  [TPTP FOF],[50],[11],[30],[9],[10],[266],
+  [*Combined*],[*61*],[*13*],[*35*],[*18*],[*15*],[*955*],
 )
 #line(length: 100%, stroke: 0.5pt)
 
-Across both datasets the improved solver solves 34/61 problems (56%) vs 13/61 (21%) for the baseline. On the AI-generated set the net gain is one problem (2→3): the improved solver adds access_control and network_routing but regresses on medical_diagnosis (baseline solves in 0.65 s; improved times out), meaning the two solvers do not have a strict improvement relationship on that set. On the TPTP set the gain is much larger (11 to 31 correct), driven primarily by the SYN domain.
+Across both datasets the improved solver solves 35/61 problems (57%) vs 13/61 (21%) for the baseline. On the AI-generated set the net gain is three problems (2→5): the improved solver adds access_control, financial_audit, and network_routing with no regressions. On the TPTP set the gain is much larger (11 to 30 correct), driven primarily by the SYN domain.
 
 == TPTP FOF: per-domain analysis
 
@@ -156,8 +162,8 @@ Across both datasets the improved solver solves 34/61 problems (56%) vs 13/61 (2
   [*Domain*],[*Total*],[*Baseline*],[*Improved*],
   [SYN],[36],[9 (25%)],[27 (75%)],
   [LCL],[8],[2 (25%)],[2 (25%)],
-  [PUZ],[6],[0 (0%)],[2 (33%)],
-  [*All*],[*50*],[*11 (22%)*],[*31 (62%)*],
+  [PUZ],[6],[0 (0%)],[1 (17%)],
+  [*All*],[*50*],[*11 (22%)*],[*30 (60%)*],
 )
 #line(length: 100%, stroke: 0.5pt)
 
@@ -185,7 +191,7 @@ The SYN gain (9→27) confirms the saturation hypothesis: these problems are dom
 )
 #line(length: 100%, stroke: 0.5pt)
 
-The improved solver uses 1.5× fewer proof-search steps on the 11 TPTP problems both solvers solve. Total wall time is lower (54.9 s vs 59.1 s) despite identical timeout counts (9 each): the 20 additional problems solved by the improved solver complete in under 0.1 s each. The much lower median time (< 0.001 s vs 0.007 s) reflects the saturation phase solving many SYN problems almost instantly.
+The improved solver uses 1.5× fewer proof-search steps on the 11 TPTP problems both solvers solve. Total wall time is lower (54.9 s vs 59.1 s) despite identical timeout counts (9 each): the 19 additional problems solved by the improved solver complete in under 0.1 s each. The much lower median time (< 0.001 s vs 0.007 s) reflects the saturation phase solving many SYN problems almost instantly.
 
 = Discussion and Conclusion
 
@@ -199,7 +205,7 @@ The parser lacks support for equality and `include()` directives, which limits t
 
 *Future work.* Free-variable tableau~#cite(<bibel1987>) would recover the ∃∀ fast-fails by deferring witness selection until unification. Existential contraction (retaining ∃-formulae after instantiation) would handle the PUZ two-witness cases. Iterative deepening on ∀L/∃R instantiation depth, combined with forward subsumption, could make the LCL search tractable. Equality and `include()` support would widen the accessible TPTP problem set.
 
-The improved solver reaches 62% accuracy on the TPTP FOF set (vs 22% baseline) and 56% across both datasets combined (vs 21% baseline), using 1.5× fewer subgoals on jointly-solved problems. The 19 remaining TPTP failures break down into 9 search-space explosions on hard LCL/PUZ theorems and 10 cases that expose the Herbrand witness strategy's incompleteness for ∃∀ alternation and existential reuse.
+The improved solver reaches 60% accuracy on the TPTP FOF set (vs 22% baseline) and 57% across both datasets combined (vs 21% baseline), using 1.5× fewer subgoals on jointly-solved problems. The 20 remaining TPTP failures break down into 10 search-space explosions on hard LCL/PUZ theorems and 10 cases that expose the Herbrand witness strategy's incompleteness for ∃∀ alternation and existential reuse.
 
 = Data Availability
 
