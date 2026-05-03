@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import statistics
 from pathlib import Path
 
@@ -93,21 +94,24 @@ def fig_failure_breakdown(rows: list[dict]) -> None:
     timeouts  = [bt, it_]
     fast_fails = [bf, if_]
 
-    fig, ax = plt.subplots(figsize=(5, 4))
+    DARK_GREY = "#777777"
+    fig, ax = plt.subplots(figsize=(5, 4.5))
     x = np.arange(2)
-    p1 = ax.bar(x, corrects,   color=GREEN, label="Correct")
-    p2 = ax.bar(x, timeouts,   bottom=corrects, color=RED,  label="Timeout")
-    p3 = ax.bar(x, fast_fails, bottom=[c+t for c,t in zip(corrects, timeouts)],
-                color=GREY, label="Fast-fail (incomplete)")
-    ax.set_xticks(x); ax.set_xticklabels(labels)
+    ax.bar(x, corrects,   color=GREEN, label="Correct")
+    ax.bar(x, timeouts,   bottom=corrects, color=RED,  label="Timeout")
+    ax.bar(x, fast_fails, bottom=[c+t for c,t in zip(corrects, timeouts)],
+           color=DARK_GREY, label="Fast-fail (incomplete)")
+    n = len(rows)
+    ax.set_ylim(0, n * 1.22)
+    ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=11)
     ax.set_ylabel("Number of problems")
     ax.set_title("Outcome breakdown")
-    ax.legend(frameon=False, loc="upper right", fontsize=9)
+    ax.legend(frameon=False, loc="upper left", fontsize=9)
     # annotate counts inside bars
     for i, (c, t, f) in enumerate(zip(corrects, timeouts, fast_fails)):
-        if c: ax.text(i, c/2, str(c), ha="center", va="center", fontsize=9, color="white", fontweight="bold")
-        if t: ax.text(i, c + t/2, str(t), ha="center", va="center", fontsize=9, color="white", fontweight="bold")
-        if f: ax.text(i, c + t + f/2, str(f), ha="center", va="center", fontsize=9, color="white", fontweight="bold")
+        if c: ax.text(i, c/2, str(c), ha="center", va="center", fontsize=10, color="white", fontweight="bold")
+        if t: ax.text(i, c + t/2, str(t), ha="center", va="center", fontsize=10, color="white", fontweight="bold")
+        if f: ax.text(i, c + t + f/2, str(f), ha="center", va="center", fontsize=10, color="white", fontweight="bold")
     fig.tight_layout()
     fig.savefig(FIGURES_DIR / "fig_failure_breakdown.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -136,15 +140,21 @@ def fig_runtime_scatter(rows: list[dict]) -> None:
     ax.axhline(6, color="#888", linestyle="--", linewidth=0.7, label="Timeout (6 s)")
     ax.grid(axis="y", which="both", linestyle="--", alpha=0.2)
 
-    # Legend: shape for algorithm, colour for outcome
-    handles = [
+    # Two separate legends: outcome colour (left) and solver shape (right)
+    outcome_handles = [
         mpatches.Patch(color=GREEN, label="Correct"),
         mpatches.Patch(color=RED,   label="Timeout"),
         mpatches.Patch(color=GREY,  label="Fast-fail"),
-        plt.Line2D([0],[0], marker="o", color="w", markerfacecolor="#555", label="Baseline", markersize=7),
-        plt.Line2D([0],[0], marker="^", color="w", markerfacecolor="#555", label="Improved",  markersize=7),
     ]
-    ax.legend(handles=handles, frameon=False, fontsize=8, ncol=2, loc="upper left")
+    solver_handles = [
+        plt.Line2D([0],[0], marker="o", color="w", markerfacecolor="#555", label="Baseline", markersize=8),
+        plt.Line2D([0],[0], marker="^", color="w", markerfacecolor="#555", label="Improved",  markersize=8),
+    ]
+    leg1 = ax.legend(handles=outcome_handles, frameon=True, framealpha=0.85,
+                     fontsize=8, loc="lower left", title="Outcome", title_fontsize=8)
+    ax.add_artist(leg1)
+    ax.legend(handles=solver_handles, frameon=True, framealpha=0.85,
+              fontsize=8, loc="lower right", title="Solver", title_fontsize=8)
     fig.tight_layout()
     fig.savefig(FIGURES_DIR / "fig_runtime_scatter.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -218,6 +228,90 @@ def fig_speedup(rows: list[dict]) -> None:
     print("  fig_speedup.png")
 
 
+# ── Figure 7: Solve outcome vs TPTP difficulty rating ─────────────────────
+def _load_ratings(rows: list[dict]) -> dict[str, float]:
+    dataset_dir = ROOT / "datasets" / "tptp_fof"
+    ratings = {}
+    for r in rows:
+        text = (dataset_dir / f"{r['name']}.p").read_text()
+        m = re.search(r"%\s*Rating\s*:\s*([0-9.]+)", text)
+        ratings[r["name"]] = float(m.group(1)) if m else 0.0
+    return ratings
+
+
+def fig_rating_outcome(rows: list[dict]) -> None:
+    ratings = _load_ratings(rows)
+    unique_ratings = sorted(set(ratings.values()))
+
+    # Accumulate outcome counts per (rating, solver)
+    from collections import defaultdict
+    counts: dict = defaultdict(lambda: {"correct": 0, "timeout": 0, "fast_fail": 0})
+    for r in rows:
+        rat = ratings[r["name"]]
+        for key, ck in [("baseline", "baseline_correct"), ("improved", "improved_correct")]:
+            bucket = "correct" if r[ck] else ("timeout" if r[key]["timeout"] else "fast_fail")
+            counts[(rat, key)][bucket] += 1
+
+    n_groups = len(unique_ratings)
+    x = np.arange(n_groups)
+    w = 0.35
+
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+
+    # Baseline = solid bars, Improved = hatched bars
+    solver_styles = [
+        ("baseline", -w / 2, "Baseline", ""),
+        ("improved",  w / 2, "Improved", "///"),
+    ]
+
+    for i, (key, offset, label, hatch) in enumerate(solver_styles):
+        c = [counts[(r, key)]["correct"]   for r in unique_ratings]
+        t = [counts[(r, key)]["timeout"]   for r in unique_ratings]
+        f = [counts[(r, key)]["fast_fail"] for r in unique_ratings]
+
+        kw = dict(width=w, zorder=3, hatch=hatch, edgecolor="white" if not hatch else "#555555", linewidth=0.5)
+        ax.bar(x + offset, c, color=GREEN,      **kw)
+        ax.bar(x + offset, t, bottom=c, color=RED,        **kw)
+        ax.bar(x + offset, f, bottom=[a+b for a,b in zip(c,t)], color="#777777", **kw)
+
+        # Annotate each bar with counts (skip zeros and tiny bars)
+        for j, (cv, tv, fv) in enumerate(zip(c, t, f)):
+            xpos = x[j] + offset
+            if cv: ax.text(xpos, cv / 2,           str(cv), ha="center", va="center", fontsize=7, color="white", fontweight="bold")
+            if tv: ax.text(xpos, cv + tv / 2,      str(tv), ha="center", va="center", fontsize=7, color="white", fontweight="bold")
+            if fv: ax.text(xpos, cv + tv + fv / 2, str(fv), ha="center", va="center", fontsize=7, color="white", fontweight="bold")
+
+    # x-axis: show rating + total n
+    n_at = {r: sum(1 for row in rows if ratings[row["name"]] == r) for r in unique_ratings}
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"{r}\n(n={n_at[r]})" for r in unique_ratings], fontsize=9)
+    ax.set_xlabel("TPTP difficulty rating")
+    ax.set_ylabel("Number of problems")
+    ax.set_title("Solve outcome vs TPTP difficulty rating")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    # Legend: colour = outcome, hatch = solver
+    outcome_patches = [
+        mpatches.Patch(color=GREEN,     label="Correct"),
+        mpatches.Patch(color=RED,       label="Timeout"),
+        mpatches.Patch(color="#777777", label="Fast-fail"),
+    ]
+    solver_patches = [
+        mpatches.Patch(facecolor="#aaaaaa", edgecolor="#555555", hatch="",    label="Baseline (left)"),
+        mpatches.Patch(facecolor="#aaaaaa", edgecolor="#555555", hatch="///", label="Improved (right)"),
+    ]
+    leg1 = ax.legend(handles=outcome_patches, frameon=True, framealpha=0.85,
+                     fontsize=8, loc="upper right", title="Outcome", title_fontsize=8)
+    ax.add_artist(leg1)
+    ax.legend(handles=solver_patches, frameon=True, framealpha=0.85,
+              fontsize=8, loc="center right", title="Solver", title_fontsize=8)
+
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / "fig_rating_outcome.png", dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print("  fig_rating_outcome.png")
+
+
 def main() -> None:
     FIGURES_DIR.mkdir(exist_ok=True)
     rows = load()
@@ -228,6 +322,7 @@ def main() -> None:
     fig_runtime_scatter(rows)
     fig_clauses(rows)
     fig_speedup(rows)
+    fig_rating_outcome(rows)
     print("Done.")
 
 

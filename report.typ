@@ -60,19 +60,17 @@
 
 // ─── Abstract ────────────────────────────────────────────────────────────────
 
-#text(weight: "bold")[Abstract. ]This report describes the design and evaluation of a first-order logic (FOL) theorem prover implementing backward LK sequent calculus proof search. Automated theorem proving (ATP) finds application in formal verification, knowledge-base reasoning, and constraint solving; however, naive proof search is computationally intractable for first-order logic, requiring carefully engineered inference strategies to handle realistic benchmarks. The prover determines entailment by attempting to close the sequent A₁,…,Aₙ ⊢ Q by applying LK inference rules in reverse. It is implemented in Python 3.12 and comprises a hand-written tokeniser, a recursive-descent parser for TPTP FOF syntax, a CNF normalisation pipeline including Skolemisation and variable standardisation, occurs-check unification, and two proof-search solvers. The _baseline_ (Algorithm 2) correctly implements the rule-priority structure of Algorithm 2~#cite(<hou2021>): invertible single-conclusion rules (∧L, ∨R, →R, ¬L, ¬R, ∀R, ∃L) are applied first, with branching rules (∧R, ∨L, →L) deferred until no invertible rule remains. However, each invertible rule is decomposed one formula at a time per recursion level, creating intermediate memoized states. The _improved_ solver replaces this with a saturation phase that applies all invertible rules to fixpoint in a single pass before entering the branching phase, collapsing k individual recursion steps into one and eliminating redundant re-evaluation of the same connectives across different branches. Both solvers are evaluated on two datasets totalling 61 problems from different sources: 11 hand-crafted AI-domain problems and 50 standard TPTP FOF problems covering the SYN, LCL, and PUZ domains. The improved solver solves 34/61 problems (56%) compared to 13/61 (21%) for the baseline, and uses 1.7× fewer proof-search steps on the 11 TPTP problems both solve. On the 50-problem TPTP subset the gap is 30/50 (60%) vs 11/50 (22%). The improved solver never regresses on any problem solved by the baseline. Remaining failures divide between search-space explosions on hard condensed-detachment theorems and incompleteness in the Herbrand witness instantiation strategy for ∃∀ alternation.
+#text(weight: "bold")[Abstract. ]This report describes the design and evaluation of a first-order logic (FOL) theorem prover implementing backward LK sequent calculus proof search. Automated theorem proving (ATP) finds application in formal verification, knowledge-base reasoning, and constraint solving; however, naive proof search is computationally intractable for FOL, requiring carefully engineered inference strategies. The system is implemented in Python 3.12 with a TPTP FOF parser, CNF normalisation pipeline, occurs-check unification, and two proof-search solvers. The _baseline_ (Algorithm 2) correctly implements the rule-priority structure of Algorithm 2~#cite(<hou2021>): invertible single-conclusion rules (∧L, ∨R, →R, ¬L, ¬R, ∀R, ∃L) are applied first, with branching rules (∧R, ∨L, →L) deferred until no invertible rule remains; each invertible rule is decomposed one formula at a time, creating k intermediate memoised states. The _improved_ solver replaces this with a saturation phase that drives all invertible rules to fixpoint in a single pass, collapsing k recursion levels into one canonical memo entry before any branching occurs. Both solvers are evaluated on two datasets totalling 61 problems: 11 hand-crafted AI-domain problems and 50 TPTP FOF problems covering the SYN, LCL, and PUZ domains. The improved solver solves 34/61 (56%) vs 13/61 (21%) for the baseline, using 1.5× fewer proof-search steps on jointly-solved problems. On TPTP the gap is 31/50 (62%) vs 11/50 (22%). On the AI-generated set the improved solver gains two problems but regresses on one (medical_diagnosis), for a net gain of one. Remaining failures divide between search-space explosions on hard condensed-detachment theorems and incompleteness in the Herbrand witness strategy for ∃∀ alternation.
 
 #v(0.3em)
 #text(weight: "bold")[Keywords: ]first-order logic #sym.dot.op LK sequent calculus #sym.dot.op backward proof search #sym.dot.op saturation #sym.dot.op TPTP
 #v(0.5em)
 
 // ─── Body ────────────────────────────────────────────────────────────────────
-
+#pagebreak()
 = Introduction
 
-Automated theorem proving (ATP) studies whether a formula follows logically from a set of axioms, and finds application in formal verification, knowledge-base reasoning, and constraint solving. First-order ATP is undecidable in general, so practical systems must manage the proof-search space carefully; naive exhaustive search becomes intractable even on small benchmarks.
-
-Modern ATP is built around two main approaches. _Resolution refutation_, introduced by Robinson~#cite(<robinson1965>) and extended by provers such as Vampire~#cite(<kovacs2013>), works by refuting the negated conjecture via clause-level inference. _Sequent-calculus and tableau methods_ reason directly with formulas rather than clause sets, as in the free-variable connection method~#cite(<bibel1987>) and sequent provers based on Gentzen's LK~#cite(<gentzen1969>). Within sequent calculi, an important property is that _invertible_ rules (those whose application never loses a provable branch) can be applied eagerly to reduce branching, while _non-invertible_ rules require search over multiple options.
+Automated theorem proving (ATP) studies whether a formula follows logically from a set of axioms, finding application in formal verification, knowledge-base reasoning, and constraint solving. First-order ATP is undecidable in general; naive exhaustive search becomes intractable even on small benchmarks, so practical systems must manage the proof-search space carefully. Within sequent calculi, _invertible_ rules (those whose application never loses a provable branch) can be applied eagerly to reduce branching, while _non-invertible_ rules require search over multiple options.
 
 This work implements Algorithm 2 from~#cite(<hou2021>), a backward LK proof-search procedure, and improves it with eager saturation of invertible rules and a circular-substitution guard for quantifier instantiation. Both versions are evaluated on two benchmark datasets totalling 61 problems.
 
@@ -80,13 +78,7 @@ This work implements Algorithm 2 from~#cite(<hou2021>), a backward LK proof-sear
 
 == Architecture
 
-#figure(
-  image("figures/architecture.png", width: 85%),
-  supplement: [Fig.],
-  caption: [System pipeline: TPTP input is parsed into a formula AST, normalised via CNF and unification, then passed to the solver.],
-) <fig-arch>
-
-Figure~@fig-arch shows the four-stage pipeline. A TPTP FOF file is first read by the parser, which produces an internal formula AST. TPTP uppercase variables are mapped to lowercase and constants are kept distinct from variables throughout. The parsed formulas then pass through the CNF and unification stage, which normalises them via implication elimination, NNF conversion, variable standardisation, Skolemisation, and distribution. Occurs-check unification is also provided here for use during proof search. The solver takes the formula list and runs backward LK proof search, recording the entailment outcome and search metrics in a result object. The benchmark driver collects results across all problem files and writes them to JSON.
+The system follows a four-stage pipeline. A TPTP FOF file is parsed into an internal formula AST; the CNF stage applies implication elimination, NNF conversion, Skolemisation, and variable standardisation. The solver runs backward LK proof search, recording entailment outcome and search metrics; the benchmark driver collects results and writes them to JSON.
 
 == Baseline Algorithm (Algorithm 2)
 
@@ -97,9 +89,9 @@ The baseline implements Algorithm 2~#cite(<hou2021>, supplement: [p. 67]) as bac
 + Otherwise, select the first applicable LK rule in priority order and recurse on the subgoal(s).
 + Memoize all proved/refuted sequents; stop and report timeout after the wall-clock limit.
 
-Rules are applied in three priority groups per Algorithm 2. *Step 2* tries each applicable invertible single-conclusion rule — ∧L, ∨R, →R, ¬L, ¬R, ∀R, ∃L — and commits immediately (one rule per recursion level). ∨R correctly retains both disjuncts as a single subgoal: `Γ ⊢ A, B, Δ` replaces `Γ ⊢ A∨B, Δ`. *Step 3* tries all applicable branching rules — ∧R, ∨L, →L, ↔R, ↔L — returning True if any closes both subgoals. *Steps 4–5* instantiate ∀L and ∃R against known terms, then a fresh Skolem constant.
+Rules are applied in three priority groups. Invertible single-conclusion rules (∧L, ∨R, →R, ¬L, ¬R, ∀R, ∃L) are tried first, one at a time, committing immediately. Branching rules (∧R, ∨L, →L, ↔R, ↔L) follow, returning True if any closes both subgoals. Finally, ∀L and ∃R are instantiated against known terms and fresh Skolem constants.
 
-The limitation is structural: each invertible rule is applied one formula at a time, each producing a distinct memoized sequent. For a sequent with k invertible connectives, the baseline creates k intermediate memo entries on the path to the final saturated form. If the same saturated form is reached from multiple proof-search branches, the redundant intermediate decompositions cannot be shared.
+The limitation is structural: each invertible rule creates a distinct memoised sequent, so k invertible connectives produce k intermediate memo entries before the saturated form is reached. Paths converging on the same saturated form cannot share these intermediate decompositions.
 
 == Improved Algorithm
 
@@ -112,8 +104,6 @@ The entire loop repeats until no rule fires. After each saturation step the axio
 
 *Branching phase.* Remaining rules are tried in order of increasing branching factor: ∨L, ∧R, →L, and ↔R each create two subgoals; ↔L creates three; ∀L and ∃R iterate over candidate terms. A circular-substitution guard prevents instantiating a variable with a term that already contains it, avoiding infinite recursion.
 
-*Hypothesis.* An invertible rule is one whose conclusion is provable iff all its premises are provable; applying it cannot lose a valid proof. Each invertible rule applied during saturation eliminates one connective from the sequent with no branching. In the baseline, each such elimination produces a distinct intermediate sequent that is independently memoised. When the same saturated form is reachable from multiple paths through the branching phase, the baseline re-decomposes each invertible connective from scratch on each path, wasting work proportional to the number of branches that converge on the same terminal state. The saturation phase avoids this: the canonical fully-reduced sequent is computed once and stored, so all proof-search paths that would reach equivalent intermediate states share a single memo entry. On the SYN domain, dominated by propositional connectives (→, ↔, ∧, ∨, ¬), this shared-saturation gain is expected to be large and directly observable in accuracy and step-count metrics.
-
 = Datasets
 
 Two benchmark datasets are used, from different sources.
@@ -122,9 +112,7 @@ Two benchmark datasets are used, from different sources.
 
 *Dataset 2: TPTP FOF official benchmark (50 problems).* Problems downloaded from the TPTP library~#cite(<sutcliffe2009>). The set covers three domains: *SYN* (36 problems) contains syntactic benchmarks from the classical Pelletier suite~#cite(<pelletier1986>), testing propositional connectives and quantifiers; *LCL* (8 problems) contains logic-calculi theorems based on condensed detachment with deeply-nested function terms (TPTP difficulty ratings 0.0–0.90); *PUZ* (6 problems) contains classical puzzles with ground-fact bases and existential conjectures.
 
-All TPTP problems were filtered to those that are fully self-contained, contain at least one conjecture, use no equality predicates, and parse successfully.
-
-*Justification.* The two datasets are complementary by design. The AI-generated set targets practical reasoning patterns — transitive closure, multi-hop chains, mixed ground and universal axioms — absent from syntactic benchmark libraries, ensuring the solver is evaluated on realistic knowledge-base tasks. The TPTP set provides external validity: difficulty is independently certified, expected outcomes are verified against known ATP results, and the domain spread (SYN for propositional-connective stress, LCL for deep function-term reasoning, PUZ for ground-fact puzzles) isolates different algorithmic weaknesses across a range from trivial to TPTP difficulty 0.90. Together the datasets ensure the evaluation neither cherry-picks easy problems nor ignores practical reasoning tasks.
+All TPTP problems were filtered to those that are fully self-contained, contain at least one conjecture, use no equality predicates, and parse successfully. The two datasets are complementary: the AI-generated set covers practical reasoning patterns absent from syntactic libraries; the TPTP set provides independently certified difficulty ratings and domain spread (SYN for propositional stress, LCL for deep function-term reasoning, PUZ for ground-fact puzzles).
 
 = Implementation and Experiment
 
@@ -132,38 +120,30 @@ All TPTP problems were filtered to those that are fully self-contained, contain 
 
 *Experiment setup.* Experiments ran in a GitHub Codespaces container (Ubuntu 22.04, 4-core Intel Xeon E5-2673 v4, 2.30 GHz, 8 GB RAM). A fixed 6-second wall-clock timeout was applied per problem; both solvers were run sequentially on each problem.
 
-Each dataset was run through the benchmark driver with a six-second timeout, producing a JSON results file used for all figures and tables in this report.
-
 = Results
 
 == Combined dataset summary
 
 #figure(
-  image("figures/fig_both_datasets.png", width: 92%),
+  image("figures/fig_failure_breakdown.png", width: 72%),
   supplement: [Fig.],
-  caption: [Outcome breakdown for both datasets. Green = correct, red = timeout, grey = fast-fail (returned False without timing out).],
+  caption: [Outcome breakdown for the 50-problem TPTP FOF dataset. Green = correct, red = timeout, grey = fast-fail (returned False without timing out). Combined dataset totals are in Table 1.],
 ) <fig-both>
 
-#figure(
-  image("figures/fig_domain_correctness.png", width: 78%),
-  supplement: [Fig.],
-  caption: [Per-domain correctness on the TPTP FOF dataset.],
-) <fig-domain>
-
-*Table 1.* Combined dataset summary. Base/Imp = correct count; B-TO/I-TO = timeouts; B-cls = baseline clauses generated (millions).
+*Table 1.* Combined dataset summary. Base/Imp = correct count; B-TO/I-TO = timeouts; B-cls = baseline clauses generated (thousands).
 #v(0.3em)
 #line(length: 100%, stroke: 0.5pt)
 #table(
   columns: (2.2fr, 0.8fr, 0.8fr, 0.8fr, 0.8fr, 0.8fr, 0.8fr),
   align: (left, center, center, center, center, center, center),
-  [*Dataset*],[*N*],[*Base*],[*Imp*],[*B-TO*],[*I-TO*],[*B-cls (M)*],
-  [AI-generated],[11],[2],[4],[9],[6],[1.00],
-  [TPTP FOF],[50],[11],[30],[9],[10],[0.32],
-  [*Combined*],[*61*],[*13*],[*34*],[*18*],[*16*],[*1.32*],
+  [*Dataset*],[*N*],[*Base*],[*Imp*],[*B-TO*],[*I-TO*],[*B-cls (K)*],
+  [AI-generated],[11],[2],[3],[9],[7],[689],
+  [TPTP FOF],[50],[11],[31],[9],[9],[266],
+  [*Combined*],[*61*],[*13*],[*34*],[*18*],[*16*],[*955*],
 )
 #line(length: 100%, stroke: 0.5pt)
 
-Across both datasets the improved solver solves 34/61 problems (56%) vs 13/61 (21%) for the baseline. The improved solver does not regress on any dataset. On the AI-generated set the gain is moderate (2 to 4 correct); the two extra problems (access_control, network_routing) are solved because the saturation phase collapses their invertible-connective chains before branching. On the TPTP set the gain is much larger (11 to 30 correct), driven primarily by the SYN domain.
+Across both datasets the improved solver solves 34/61 problems (56%) vs 13/61 (21%) for the baseline. On the AI-generated set the net gain is one problem (2→3): the improved solver adds access_control and network_routing but regresses on medical_diagnosis (baseline solves in 0.65 s; improved times out), meaning the two solvers do not have a strict improvement relationship on that set. On the TPTP set the gain is much larger (11 to 31 correct), driven primarily by the SYN domain.
 
 == TPTP FOF: per-domain analysis
 
@@ -176,12 +156,18 @@ Across both datasets the improved solver solves 34/61 problems (56%) vs 13/61 (2
   [*Domain*],[*Total*],[*Baseline*],[*Improved*],
   [SYN],[36],[9 (25%)],[27 (75%)],
   [LCL],[8],[2 (25%)],[2 (25%)],
-  [PUZ],[6],[0 (0%)],[1 (17%)],
-  [*All*],[*50*],[*11 (22%)*],[*30 (60%)*],
+  [PUZ],[6],[0 (0%)],[2 (33%)],
+  [*All*],[*50*],[*11 (22%)*],[*31 (62%)*],
 )
 #line(length: 100%, stroke: 0.5pt)
 
 The SYN gain (9→27) confirms the saturation hypothesis: these problems are dominated by invertible propositional rules (→, ↔, ∧, ∨, ¬) that the improved solver eliminates in one pass before branching. LCL is unchanged (2/8): those theorems require many condensed-detachment steps and both solvers exhaust the timeout regardless of rule ordering.
+
+#figure(
+  image("figures/fig_rating_outcome.png", width: 100%),
+  supplement: [Fig.],
+  caption: [Solve outcome vs TPTP difficulty rating. Each group shows the baseline (left, solid) and improved (right, hatched) bars stacked by outcome. All problems rated ≥0.8 timeout for both solvers; the improved solver's gains are concentrated at rating 0.0, converting 16 fast-fails into correct solves.],
+) <fig-rating>
 
 == Runtime and search effort
 
@@ -193,13 +179,13 @@ The SYN gain (9→27) confirms the saturation hypothesis: these problems are dom
   align: (left, center, center),
   [*Metric (TPTP FOF)*],[*Baseline*],[*Improved*],
   [Median time (all 50)],[0.007 s],[< 0.001 s],
-  [Total wall time],[59.1 s],[62.5 s],
-  [Clauses — jointly-solved 11 problems],[978],[570],
-  [Clause reduction (jointly-solved)],[N/A],[1.7×],
+  [Total wall time],[59.1 s],[54.9 s],
+  [Clauses — jointly-solved 11 problems],[978],[646],
+  [Clause reduction (jointly-solved)],[N/A],[1.5×],
 )
 #line(length: 100%, stroke: 0.5pt)
 
-The improved solver uses 1.7× fewer proof-search steps on the 11 TPTP problems both solvers solve, and finishes them 7.6× faster. Total wall times are similar because the improved solver explores 19 additional problems (which require work) and has one more TPTP timeout. The much lower median time (< 0.001 s vs 0.007 s) reflects the saturation phase solving many SYN problems almost instantly.
+The improved solver uses 1.5× fewer proof-search steps on the 11 TPTP problems both solvers solve. Total wall time is lower (54.9 s vs 59.1 s) despite identical timeout counts (9 each): the 20 additional problems solved by the improved solver complete in under 0.1 s each. The much lower median time (< 0.001 s vs 0.007 s) reflects the saturation phase solving many SYN problems almost instantly.
 
 = Discussion and Conclusion
 
@@ -211,9 +197,9 @@ The improved solver uses 1.7× fewer proof-search steps on the 11 TPTP problems 
 
 The parser lacks support for equality and `include()` directives, which limits the fraction of TPTP problems that can be loaded.
 
-*Future improvements.* Three concrete directions could address the identified limitations. (1) _Free-variable tableau_~#cite(<bibel1987>): deferring witness selection until unification forces a binding would allow the eigenvariable introduced by ∀R to constrain the ∃Y choice, recovering the ten fast-fail ∃Y ∀X cases. (2) _Existential contraction_: retaining ∃-formulae after instantiation would enable the two-witness case splits required by the failing PUZ problems. (3) _Iterative deepening_: bounding the term-instantiation depth for ∀L/∃R with iterative deepening, combined with forward subsumption, would provide completeness within each depth limit and could make the LCL search practical. Extending the parser to support equality and `include()` would additionally widen the accessible TPTP problem set.
+*Future work.* Free-variable tableau~#cite(<bibel1987>) would recover the ∃∀ fast-fails by deferring witness selection until unification. Existential contraction (retaining ∃-formulae after instantiation) would handle the PUZ two-witness cases. Iterative deepening on ∀L/∃R instantiation depth, combined with forward subsumption, could make the LCL search tractable. Equality and `include()` support would widen the accessible TPTP problem set.
 
-The improved solver reaches 60% accuracy on the TPTP FOF set (vs 22% baseline) and 56% across both datasets combined (vs 21% baseline), using 1.7× fewer subgoals on jointly-solved problems. The 20 remaining TPTP failures break down into 10 search-space explosions on hard LCL theorems and 10 cases that expose the Herbrand witness strategy's incompleteness for ∃∀ alternation and existential reuse.
+The improved solver reaches 62% accuracy on the TPTP FOF set (vs 22% baseline) and 56% across both datasets combined (vs 21% baseline), using 1.5× fewer subgoals on jointly-solved problems. The 19 remaining TPTP failures break down into 9 search-space explosions on hard LCL/PUZ theorems and 10 cases that expose the Herbrand witness strategy's incompleteness for ∃∀ alternation and existential reuse.
 
 = Data Availability
 
